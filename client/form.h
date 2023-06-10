@@ -1,6 +1,8 @@
 #ifndef FORM_H
 #define FORM_H
 
+#include "mainwindow.h"
+
 #include <QWidget>
 
 namespace Ui {
@@ -12,7 +14,7 @@ class Form : public QWidget
     Q_OBJECT
 
 public:
-    Form(QWidget *parent = nullptr);
+    Form(MainWindow& mainWin, QWidget *parent = nullptr);
     ~Form();
 
 private:
