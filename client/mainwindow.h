@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QJsonObject>
+#include <QStandardItemModel>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -15,7 +17,12 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void setJsonObject(QJsonObject jsonObject);
+    void doQuery(QJsonObject jsonObject);
+
 private:
     Ui::MainWindow *ui;
+    QStandardItemModel *model;
+    QJsonObject jsonObject;
 };
 #endif // MAINWINDOW_H
