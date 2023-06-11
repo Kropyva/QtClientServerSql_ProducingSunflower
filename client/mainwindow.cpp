@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->lineYear->setValidator(validYear);
 
     QObject::connect(ui->buttonQuit, &QPushButton::clicked, this, [this](){
-        this->parentWidget()->show();
+        form->show();
         hide();
     });
 
@@ -143,5 +143,9 @@ void MainWindow::selectRow(int row) {
     ui->lineArea->setText(fields[0].toString());
     ui->lineProduction->setText(fields[1].toString());
     ui->lineYear->setText(fields[2].toString());
+}
+
+void MainWindow::setForm(QWidget *form) {
+    this->form = form;
 }
 

@@ -20,6 +20,7 @@ public:
 
     void changeModel(const QString& command);
     void setJsonObject(QJsonObject jsonObject);
+    void setForm(QWidget* form);
 
 private:
     void doQuery(const QString& command);
@@ -32,6 +33,7 @@ private:
     QStandardItemModel *model;
     QRegularExpressionValidator *validNumeric;
     QRegularExpressionValidator *validYear;
+    QWidget *form;
     QJsonObject json;
     bool interact;
 };

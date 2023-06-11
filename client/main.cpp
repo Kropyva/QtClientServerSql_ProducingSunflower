@@ -6,8 +6,8 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    MainWindow mainWin;
-    Form form(mainWin);
+    MainWindow window {};
+    Form form(window);
 
     form.show();
 

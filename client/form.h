@@ -14,7 +14,7 @@ class Form : public QWidget
     Q_OBJECT
 
 public:
-    Form(MainWindow& mainWin, QWidget *parent = nullptr);
+    Form(MainWindow& window, QWidget *parent = nullptr);
     ~Form();
 
 private:
