@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QJsonObject>
 #include <QStandardItemModel>
+#include <QRegularExpressionValidator>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,12 +18,21 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void changeModel(const QString& command);
     void setJsonObject(QJsonObject jsonObject);
-    void doQuery(QJsonObject jsonObject);
+
+private:
+    void doQuery(const QString& command);
+    void setJsonObject(const QString& command);
+    void selectRow(int row);
+    bool restrict() const;
 
 private:
     Ui::MainWindow *ui;
     QStandardItemModel *model;
-    QJsonObject jsonObject;
+    QRegularExpressionValidator *validNumeric;
+    QRegularExpressionValidator *validYear;
+    QJsonObject json;
+    bool interact;
 };
 #endif // MAINWINDOW_H
