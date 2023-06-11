@@ -3,7 +3,6 @@
 #include <QCoreApplication>
 #include <QTcpServer>
 #include <QTcpSocket>
-#include <QJsonDocument>
 #include <QDebug>
 
 int main(int argc, char *argv[])
@@ -12,8 +11,8 @@ int main(int argc, char *argv[])
 
     QTcpServer server;
 
-    QObject::connect(&server, &QTcpServer::newConnection, &server, [&](){
-        QTcpSocket *socket(std::move(server.nextPendingConnection()));
+    QObject::connect(&server, &QTcpServer::newConnection, &server, [&server](){
+        QTcpSocket *socket(server.nextPendingConnection());
 
         if (!socket->waitForReadyRead(5000)) {
             qDebug() << ">> Error: " << socket->errorString();
@@ -23,56 +22,59 @@ int main(int argc, char *argv[])
         qDebug() << ">> Client connected";
 
         QByteArray data(socket->readAll());
-        QJsonDocument jsonDocument(QJsonDocument::fromJson(data));
-        QJsonObject jsonObject(jsonDocument.object());
+        QJsonDocument document(QJsonDocument::fromJson(data));
+        QJsonObject obj(document.object());
 
-        qDebug() << ">> Received object:\n" << jsonObject;
+        qDebug() << ">> Received object:\n" << document;
 
-        QJsonObject responseObject {};
+        if (obj["command"] == "login") {
+            document = queries::login(obj);
 
-        if (jsonObject["command"] == "login") {
-            responseObject = queries::login(jsonObject);
-        } else if(jsonObject["command"] == "table") {
-            responseObject = queries::getModel(jsonObject);
-        } else if(jsonObject["command"] == "insert") {
+        } else if(obj["command"] == "insert") {
             QString query {
                 "INSERT INTO sunflower VALUES ("
-                + jsonObject["area"].toString() + " * 1000000, "
-                + jsonObject["production"].toString() + " * 1000000, MAKE_DATE("
-                + jsonObject["year"].toString() + ", 1, 1));"
+                + obj["area"].toString() + " * 1000000, "
+                + obj["production"].toString() + " * 1000000, MAKE_DATE("
+                + obj["year"].toString() + ", 1, 1));"
             };
+            document = queries::doQuery(obj, query);
 
-            responseObject = queries::doQuery(jsonObject, query);
-        } else if(jsonObject["command"] == "update") {
+        } else if(obj["command"] == "update") {
             QString query {
                 "UPDATE sunflower SET area = "
-                + jsonObject["area"].toString()
+                + obj["area"].toString()
                 + " * 1000000, production ="
-                + jsonObject["production"].toString()
+                + obj["production"].toString()
                 + " * 1000000 WHERE year = MAKE_DATE("
-                + jsonObject["year"].toString()
+                + obj["year"].toString()
                 + ", 1, 1)"
             };
+            document = queries::doQuery(obj, query);
 
-            responseObject = queries::doQuery(jsonObject, query);
-        } else if(jsonObject["command"] == "delete") {
+        } else if(obj["command"] == "delete") {
             QString query {
                 "DELETE FROM sunflower WHERE year = MAKE_DATE("
-                + jsonObject["year"].toString() + ", 1, 1);"
+                + obj["year"].toString() + ", 1, 1);"
             };
+            document = queries::doQuery(obj, query);
 
-            responseObject = queries::doQuery(jsonObject, query);
+        } else if(obj["command"] == "table") {
+            document = queries::getModel(obj);
+
+        } else if(obj["command"] == "first") {
+            document = queries::getModel(obj, "SELECT * FROM collection");
+
+        } else if(obj["command"] == "second") {
+            document = queries::getModel(obj, "SELECT * FROM average_production");
         }
 
-        QJsonDocument responseDocument(responseObject);
-        QByteArray responseUtf8(responseDocument.toJson(QJsonDocument::Compact));
+        data = document.toJson(QJsonDocument::Compact);
 
-        socket->write(responseUtf8);
+        socket->write(data);
         socket->flush();
 
-        qDebug() << ">> Sent object:\n" << responseObject;
+        qDebug() << ">> Sent object:\n" << document;
 
-        socket->deleteLater();
         socket->disconnectFromHost();
         socket->close();
         delete socket;
