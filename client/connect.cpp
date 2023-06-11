@@ -1,5 +1,9 @@
 #include "connect.h"
 
+#include <QTcpSocket>
+#include <QJsonArray>
+#include <QJsonObject>
+
 static void write(QTcpSocket& socket, QByteArray& data) {
     socket.connectToHost(QHostAddress::LocalHost, 9090);
 
@@ -12,23 +16,18 @@ static void write(QTcpSocket& socket, QByteArray& data) {
     socket.flush();
 }
 
-static QJsonObject read(QTcpSocket& socket) {
-    QJsonObject response {};
-
+static QJsonDocument read(QTcpSocket& socket) {
     if (!socket.waitForReadyRead(5000)) {
-        return response;
+        return QJsonDocument();
     }
 
     QByteArray data(socket.readAll());
-    QJsonDocument jsonDocument(QJsonDocument::fromJson(data));
-    response = jsonDocument.object();
-
-    return response;
+    return QJsonDocument::fromJson(data);
 }
 
-static QJsonObject conn(QByteArray& data) {
+static QJsonDocument conn(QByteArray& data) {
     QTcpSocket socket {};
-    QJsonObject response {};
+    QJsonDocument response {};
 
     write(socket, data);
 
@@ -41,29 +40,30 @@ static QJsonObject conn(QByteArray& data) {
 }
 
 bool connect::login(QByteArray& data) {
-    return conn(data)["isOpen"].toBool() ? true : false;
+    return conn(data).object()["login"].toBool() ? true : false;
 }
 
-void connect::query(QStandardItemModel *model, QByteArray& data) {
-    if (QJsonDocument::fromJson(data).isNull()) {
-        return;
+bool connect::setModel(QStandardItemModel *model, QByteArray& data) {
+    QJsonDocument document(conn(data));
+    if (document.isNull()) {
+        return false;
     }
 
-    QJsonArray jsonArray(conn(data)["model"].toArray());
-    if (jsonArray.isEmpty()) {
-        return;
+    QJsonArray array(document.array());
+    if (array.isEmpty()) {
+        return false;
     }
 
-    QStringList keys(jsonArray[0].toObject().keys());
+    QStringList keys(array[0].toObject().keys());
     int columnCount(keys.count());
-    int rowCount(jsonArray.size());
+    int rowCount(array.size());
 
     model->setHorizontalHeaderLabels(keys);
     model->setColumnCount(columnCount);
     model->setRowCount(rowCount);
 
     for (int row(0); row < rowCount; row++) {
-        QJsonObject jsonObject(jsonArray[row].toObject());
+        QJsonObject jsonObject(array[row].toObject());
         for(int column(0); column < columnCount; column++) {
             const QString& key(keys.at(column));
             const QVariant& value(jsonObject.value(key).toVariant());
@@ -71,4 +71,6 @@ void connect::query(QStandardItemModel *model, QByteArray& data) {
             model->setData(index, value);
         }
     }
+
+    return true;
 }
