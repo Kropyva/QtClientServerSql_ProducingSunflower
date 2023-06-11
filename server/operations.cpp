@@ -4,24 +4,24 @@
 #include <QSqlQuery>
 #include <QJsonArray>
 
-static QSqlDatabase getDatabase(QJsonObject& jsonObject) {
+static QSqlDatabase getDatabase(QJsonObject& obj) {
     QSqlDatabase db(QSqlDatabase::addDatabase("QPSQL"));
 
     db.setHostName("localhost");
     db.setPort(5432);
     db.setDatabaseName("sunflower_production");
-    db.setUserName(jsonObject["username"].toString());
-    db.setPassword(jsonObject["password"].toString());
+    db.setUserName(obj["username"].toString());
+    db.setPassword(obj["password"].toString());
 
     return db;
 }
 
-static QJsonArray getJsonModel(QSqlDatabase& db, QString& queryText) {
+static QJsonArray getJsonModel(QSqlDatabase& db, const QString& query) {
     QSqlQueryModel *model(new QSqlQueryModel);
-    model->setQuery(queryText, db);
+    model->setQuery(query, db);
 
-    QJsonArray jsonArray {};
-    QJsonObject jsonObject {};
+    QJsonArray array {};
+    QJsonObject obj {};
     int rowCount(model->rowCount());
     int columnCount(model->columnCount());
 
@@ -29,47 +29,49 @@ static QJsonArray getJsonModel(QSqlDatabase& db, QString& queryText) {
         QJsonObject rowObject {};
         for (int column(0); column < columnCount; column++) {
             QModelIndex index(model->index(row, column));
-            QString columnName(model->headerData(column, Qt::Horizontal).toString());
+            QString key(model->headerData(column, Qt::Horizontal).toString());
             QVariant value(model->data(index));
-            rowObject[columnName] = QJsonValue::fromVariant(value);
+            rowObject[key] = QJsonValue::fromVariant(value);
         }
-        jsonArray.append(rowObject);
+        array.append(rowObject);
     }
 
     delete model;
-    return jsonArray;
+    return array;
 }
 
-QJsonObject queries::login(QJsonObject& received) {
+QJsonDocument queries::login(QJsonObject& received) {
     QSqlDatabase db { getDatabase(received) };
-    QJsonObject response {};
+    QJsonDocument response {};
+    QJsonObject obj {};
 
-    response["isOpen"] = db.open() ? true : false;
-
+    obj["login"] = db.open() ? true : false;
     db.close();
+
+    response.setObject(obj);
     return response;
 }
 
-QJsonObject queries::getModel(QJsonObject& received, QString queryText ) {
+QJsonDocument queries::getModel(QJsonObject& received, const QString& query ) {
     QSqlDatabase db { getDatabase(received) };
-    QJsonObject response {};
+    QJsonDocument response {};
 
     if (db.open()) {
-        response["model"] = getJsonModel(db, queryText);
+        response.setArray(getJsonModel(db, query));
     }
 
     db.close();
     return response;
 }
 
-static QJsonObject queries::doQuery(QJsonObject& received, QString& queryText) {
+QJsonDocument queries::doQuery(QJsonObject& received, const QString& query) {
     QSqlDatabase db { getDatabase(received) };
 
     if (db.open()) {
-        QSqlQuery *query(new QSqlQuery(db));
-        query->prepare(queryText);
-        query->exec();
-        delete query;
+        QSqlQuery *sqlQuery(new QSqlQuery(db));
+        sqlQuery->prepare(query);
+        sqlQuery->exec();
+        delete sqlQuery;
     }
 
     db.close();
