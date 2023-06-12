@@ -3,7 +3,6 @@
 #include "connect.h"
 
 #include <QMessageBox>
-#include <QThread>
 
 Form::Form(MainWindow& window, QWidget *parent)
     : QWidget(parent)

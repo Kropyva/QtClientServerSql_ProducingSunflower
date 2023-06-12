@@ -1,4 +1,5 @@
 #include "operations.h"
+#include "crypto.h"
 
 #include <QCoreApplication>
 #include <QTcpServer>
@@ -21,7 +22,7 @@ int main(int argc, char *argv[])
 
         qDebug() << ">> Client connected";
 
-        QByteArray data(socket->readAll());
+        QByteArray data(crypto::decrypt(socket->readAll()));
         QJsonDocument document(QJsonDocument::fromJson(data));
         QJsonObject obj(document.object());
 
@@ -70,7 +71,7 @@ int main(int argc, char *argv[])
 
         data = document.toJson(QJsonDocument::Compact);
 
-        socket->write(data);
+        socket->write(crypto::encrypt(data));
         socket->flush();
 
         qDebug() << ">> Sent object:\n" << document;

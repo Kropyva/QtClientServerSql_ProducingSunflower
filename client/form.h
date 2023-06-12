@@ -3,8 +3,6 @@
 
 #include "mainwindow.h"
 
-#include <QWidget>
-
 namespace Ui {
 class Form;
 }

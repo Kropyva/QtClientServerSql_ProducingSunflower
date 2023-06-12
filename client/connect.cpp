@@ -1,4 +1,5 @@
 #include "connect.h"
+#include "crypto.h"
 
 #include <QTcpSocket>
 #include <QJsonArray>
@@ -12,7 +13,7 @@ static void write(QTcpSocket& socket, QByteArray& data) {
         return;
     }
 
-    socket.write(data);
+    socket.write(crypto::encrypt(data));
     socket.flush();
 }
 
@@ -21,7 +22,7 @@ static QJsonDocument read(QTcpSocket& socket) {
         return QJsonDocument();
     }
 
-    QByteArray data(socket.readAll());
+    QByteArray data(crypto::decrypt(socket.readAll()));
     return QJsonDocument::fromJson(data);
 }
 
